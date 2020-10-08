@@ -4,10 +4,10 @@
 #include "ZoneCounterInterface.h"
 
 namespace MSerdarKaraman {
-    class Map : public MapInterface {//Using map name creates confusion with std::map
+    class BitesMap : public MapInterface {//I used Bites prefix for preventing confusion with std::map
     public:
 
-        Map(const int width, const int height) {// There is no point of using const in here.
+        BitesMap(const int width, const int height) {// There is no point of using const in here.
             m_height = height;
             m_width = width;
             m_mapArray = std::unique_ptr<bool[]>(new bool[m_width * m_height]);
@@ -15,12 +15,13 @@ namespace MSerdarKaraman {
 
         [[deprecated("You can't change size of map")]]
         void SetSize(const int width, const int height) {
-            // Bence SetSize'ın kaldırılıp bunun constructor haline getirilmesi lazım.
-            // Bir harita oluşturulurken size'ı bellidir ve sonradan içerisi dolu iken değiştirmemeli.
+            // I think size of map should be constant after creating it using constructor.
+            // If its need to be changed, I need to know how its effect the current map data,
+            // There should be clear requirement from software architect.
         }
 
         // Returns size of map to solve.
-        void GetSize(int &width, int &height) { // Bence bu fonksiyonun dönüş değeri std::pair olsaydı daha uygun olabilirdi.
+        void GetSize(int &width, int &height) { // I think it would be better using std:pair as a return type.
             width = m_width;
             height = m_height;
         }
@@ -40,11 +41,9 @@ namespace MSerdarKaraman {
             return m_mapArray[y * m_width + x];
         }
 
-
         // Show map contents.
-        // Ekrana yazdırmaktansa std::ostream'a yazdırsaydık gelecekte dosyaya yazmak için de kullanabilirdik.
-        // Interface'de dönüş değeri void olduğu için değiştirmiyorum.
-        void Show() {
+        // If we change return type to std::ostream, we can use it for writing file or any other stream object.
+        void Show() { //Also this need to be const member function.
             for (int row = 0; row < m_height; row++) {
                 for (int col = 0; col < m_width; col++) {
                     if (IsBorder(col, row)) {
@@ -57,10 +56,6 @@ namespace MSerdarKaraman {
             }
         }
 
-        ~Map() {
-            //TODO ?
-        }
-
     private:
         int m_width = 0;
         int m_height = 0;
@@ -69,6 +64,7 @@ namespace MSerdarKaraman {
 
     class ZoneCounter : public ZoneCounterInterface {
     public:
+
         // Feeds map instance into solution class, and initialize.
         void Init(MapInterface *map) {
             map->GetSize(m_width, m_height);
@@ -79,24 +75,22 @@ namespace MSerdarKaraman {
             for (int y = 0; y < m_height; y++) {
                 for (int x = 0; x < m_width; x++) {
                     if (map->IsBorder(x, y)) {
-                        m_charArray[y * m_width + x]=borderSign;
+                        m_charArray[y * m_width + x] = '#';
                     }
                     else {
-                        m_charArray[y * m_width + x]=' ';
+                        m_charArray[y * m_width + x] = ' ';
                     }
                 }
             }
         };
 
-        // Recursive algoritma bu problem için çok uygun ama safety-critical yazılımlar için sorun çıkarabilir.
-        // Çok derine inen bir recurive çağrı stack ve RAM'i patlatabileceği için DO-178 geregi recurive çağrıların
-        // sınırlandırılmış olması gerekiyor.
+        // Recursive algorithm perfectly fits for this problem BUT it have a risk of stack overflow
+        // That why its must be bounded in DO-178 projects.
         void fillZone(int x, int y, char sign){
 
-            if(x>=m_width || x<0 || y>=m_height || y<0){
-                return;
-            }
-            if(isPointEmpty(x,y))
+            bool isvalidPoint = (x<m_width && x>=0 && y<m_height && y>=0);
+
+            if(isvalidPoint && isPointEmpty(x,y))
             {
                 setPoint(x, y, sign);
                 fillZone(x + 1, y, sign);
@@ -106,14 +100,17 @@ namespace MSerdarKaraman {
             }
         }
 
-        inline void setPoint(int x, int y,char sign){
-            m_charArray[y * m_width + x] = sign;
+        void setPoint(int x, int y,char sign){
+            bool isvalidPoint = (x<m_width && x>=0 && y<m_height && y>=0);
+            if(isvalidPoint){
+                m_charArray[y * m_width + x] = sign;
+            }
         }
 
-        inline char getPoint(int x, int y){
+        char getPoint(int x, int y) const {
             return m_charArray[y * m_width + x];
         }
-        inline bool isPointEmpty(int x,int y){
+        bool isPointEmpty(int x,int y){
             return (m_charArray[y * m_width + x] == ' ');
         }
 
@@ -127,8 +124,7 @@ namespace MSerdarKaraman {
                 for (int x = 0; x < m_width; x++) {
                     if (isPointEmpty(x, y)) {
                         zoneNumber++;
-                        // 1'den 9'a kadar rakamları yazıyor. Sonra :;< gibi işaretlere başlıyor.
-                        // Haritayı görselleştirmek ve debug için alanları farklı işaretler ile boyamak güzel bir çözüm bence.
+                        // Start filling map with char equivalent of numbers and than symbols like :;<
                         fillZone(x,y,zoneNumber + '0');
                     }
                 }
@@ -137,22 +133,20 @@ namespace MSerdarKaraman {
             return zoneNumber;
         };
 
-        // Ekrana yazdırmaktansa std::ostream'a yazdırsaydık gelecekte dosyaya yazmak için de kullanabilirdik.
-        // Interface'de dönüş değeri void olduğu için değiştirmiyorum.
-        void Show() {
+        // If we change return type to std::ostream, we can use it for writing file or any other stream object.
+        void Show() const {
             for (int row = 0; row < m_height; row++) {
                 for (int col = 0; col < m_width; col++) {
-                    std::cout << m_charArray[row * m_width + col];
+                    std::cout << m_charArray[row    * m_width + col];
                 }
                 std::cout << std::endl;
             }
         }
 
     private:
-        const char borderSign = '#';
         int m_width = 0;
         int m_height = 0;
-        std::unique_ptr<char[]> m_charArray; //Çok yer kaplamasın diye burayı char array tanımladım. 2^8 - 1 farklı karakter alan işaretlemek için yeterli bence.
+        std::unique_ptr<char[]> m_charArray; //I think  2^8 - 1 different char is enough for filling map. (Actually 4 is already enough acording to four color map theorem)
         int zoneNumber=0;
         bool isSolved=false;
     };
@@ -171,10 +165,10 @@ namespace MSerdarKaraman {
 int main() {
     using namespace MSerdarKaraman;
 
-    const int myWidth = 50;
-    const int myHeight = 15;
+    constexpr int myWidth = 50;
+    constexpr int myHeight = 15;
 
-    Map myMap(myWidth, myHeight);
+    BitesMap myMap(myWidth, myHeight);
 
     for (int i = 0; i < myHeight; i++) { //vertical line
         myMap.SetBorder(myWidth / 3, i);
