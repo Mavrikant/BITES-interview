@@ -1,11 +1,8 @@
-//
-// Created by serdar on 6.10.2020.
-//
-
 #ifndef HELLO_WORLD_MAPINTERFACE_H
 #define HELLO_WORLD_MAPINTERFACE_H
 
-class MapInterface {
+class MapInterface
+{
 public:
     virtual ~MapInterface() {}
 
@@ -13,7 +10,7 @@ public:
     virtual void SetSize(const int width, const int height) = 0;
 
     // Returns size of map to solve.
-    virtual void GetSize(int & width, int & height) = 0;
+    virtual void GetSize(int &width, int &height) = 0;
 
     // Sets border at given point.
     virtual void SetBorder(const int x, const int y) = 0;
