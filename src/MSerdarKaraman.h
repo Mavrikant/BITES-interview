@@ -107,41 +107,6 @@ public:
         }
     };
 
-    // Recursive algorithm perfectly fits for this problem BUT it have a risk of stack overflow
-    // That why its must be bounded in DO-178 projects.
-    void fillZone(int x, int y, char sign)
-    {
-
-        bool isvalidPoint = (x < m_width && x >= 0 && y < m_height && y >= 0);
-
-        if (isvalidPoint && isPointEmpty(x, y))
-        {
-            setPoint(x, y, sign);
-            fillZone(x + 1, y, sign);
-            fillZone(x, y + 1, sign);
-            fillZone(x - 1, y, sign);
-            fillZone(x, y - 1, sign);
-        }
-    }
-
-    void setPoint(int x, int y, char sign)
-    {
-        bool isvalidPoint = (x < m_width && x >= 0 && y < m_height
-                             && y >= 0); // Do I need to add exception in here or am I overthinking ???
-        if (isvalidPoint)
-        {
-            m_charArray[y * m_width + x] = sign;
-        }
-    }
-
-    char getPoint(int x, int y) const
-    {
-        return m_charArray[y * m_width + x];
-    }
-    bool isPointEmpty(int x, int y)
-    {
-        return (m_charArray[y * m_width + x] == ' ');
-    }
 
     // Counts zones in provided map, and return result.
     int Solve()   //This function have two reposibilty. Both Solving problem and returning result. Returning result should be a different function. To provent doublde solving (!) I have to add isSolved control.
@@ -181,12 +146,48 @@ public:
     }
 
 private:
+    // Recursive algorithm perfectly fits for this problem BUT it have a risk of stack overflow
+    // That why its must be bounded in DO-178 projects.
+    void fillZone(int x, int y, char sign)
+    {
+        bool isvalidPoint = (x < m_width && x >= 0 && y < m_height && y >= 0);
+        if (isvalidPoint && isPointEmpty(x, y))
+        {
+            setPoint(x, y, sign);
+            fillZone(x + 1, y, sign);
+            fillZone(x, y + 1, sign);
+            fillZone(x - 1, y, sign);
+            fillZone(x, y - 1, sign);
+        }
+    }
+
+    void setPoint(int x, int y, char sign)
+    {
+        bool isvalidPoint = (x < m_width && x >= 0 && y < m_height
+                             && y >= 0); // Do I need to add exception in here or am I overthinking ???
+        if (isvalidPoint)
+        {
+            m_charArray[y * m_width + x] = sign;
+        }
+    }
+
+    char getPoint(int x, int y) const
+    {
+        return m_charArray[y * m_width + x];
+    }
+
+    bool isPointEmpty(int x, int y)
+    {
+        return (m_charArray[y * m_width + x] == ' ');
+    }
+
     int m_width = 0;
     int m_height = 0;
     std::unique_ptr<char[]>
     m_charArray; //I think  2^8 - 1 different char is enough for filling map. (Actually 4 is already enough acording to four color map theorem)
     int zoneNumber = 0;
     bool isSolved = false;
+
 };
 
 ZoneCounterInterface *getZoneCounter()
