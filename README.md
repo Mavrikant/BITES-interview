@@ -7,6 +7,7 @@ M. Serdar Karaman (serdar@karaman.dev)
 
 ## Compile
 * ```git submodule update --init --recursive``` get gtest library
+* ```mkdir build```
 * ```cd build```
 * ```cmake ..```
 * ```make all```
