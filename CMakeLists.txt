@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.10)
 project(BITES)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(BITES main.cpp MSerdarKaraman.h)
+include_directories(src)
+
+add_subdirectory(src)
+add_subdirectory(tst)
+add_subdirectory(lib/googletest)

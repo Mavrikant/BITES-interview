@@ -4,6 +4,7 @@
 
 #ifndef HELLO_WORLD_ZONECOUNTERINTERFACE_H
 #define HELLO_WORLD_ZONECOUNTERINTERFACE_H
+#include "MapInterface.h"
 
 class ZoneCounterInterface {
     public:

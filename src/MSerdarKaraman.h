@@ -3,6 +3,8 @@
 
 #include "MapInterface.h"
 #include "ZoneCounterInterface.h"
+#include <iostream>
+#include <memory>
 
 namespace MSerdarKaraman {
     class BitesMap : public MapInterface {//I used Bites prefix for preventing confusion with std::map
@@ -138,7 +140,7 @@ namespace MSerdarKaraman {
         void Show() const {
             for (int row = 0; row < m_height; row++) {
                 for (int col = 0; col < m_width; col++) {
-                    std::cout << m_charArray[row    * m_width + col];
+                    std::cout << m_charArray[row * m_width + col];
                 }
                 std::cout << std::endl;
             }
@@ -152,12 +154,11 @@ namespace MSerdarKaraman {
         bool isSolved=false;
     };
 
-//    ZoneCounterInterface * getZoneCounter() {
+    ZoneCounterInterface * getZoneCounter() {
+        //TODO ??? I have no idea what's the purpose of this.
+        return new ZoneCounter();
+    }
 
-//        //TODO ???
-
-//        return new ZoneCounter(...);
-//    }
 }
 
 #endif // MSERDARKARAMAN_H
