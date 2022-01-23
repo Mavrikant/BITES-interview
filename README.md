@@ -1,3 +1,4 @@
+[![CMake](https://github.com/Mavrikant/BITES-interview/actions/workflows/cmake.yml/badge.svg)](https://github.com/Mavrikant/BITES-interview/actions/workflows/cmake.yml)
 # BİTES interview
 
 M. Serdar Karaman (serdar@karaman.dev)
