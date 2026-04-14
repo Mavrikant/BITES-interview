@@ -6,11 +6,33 @@
 #include <iostream>
 #include <memory>
 
+/**
+ * @namespace MSerdarKaraman
+ * @brief Contains the concrete implementations of MapInterface and
+ *        ZoneCounterInterface for the BITES interview problem.
+ */
 namespace MSerdarKaraman {
+
+/**
+ * @brief Concrete implementation of MapInterface backed by a flat boolean array.
+ *
+ * BitesMap stores a 2-D grid of cells where each cell is either a border (@c true)
+ * or empty (@c false). The grid dimensions are fixed at construction time.
+ *
+ * @note The "Bites" prefix is used to avoid ambiguity with @c std::map.
+ */
 class BitesMap : public MapInterface  //I used Bites prefix for preventing confusion with std::map
 {
 public:
 
+    /**
+     * @brief Constructs a BitesMap with the given dimensions.
+     *
+     * All cells are initialised to empty (not a border).
+     *
+     * @param width  Number of columns in the map.
+     * @param height Number of rows in the map.
+     */
     BitesMap(const int width, const int height)  // There is no point of using const in here.
     {
         m_height = height;
@@ -18,6 +40,12 @@ public:
         m_mapArray = std::unique_ptr<bool[]>(new bool[m_width * m_height]);
     }
 
+    /**
+     * @brief Deprecated – the map size cannot be changed after construction.
+     * @deprecated Use the constructor to set the map dimensions instead.
+     * @param width  Ignored.
+     * @param height Ignored.
+     */
     [[deprecated("You can't change size of map")]]
     void SetSize(const int width, const int height)
     {
@@ -26,7 +54,11 @@ public:
         // There should be clear requirement from software architect.
     }
 
-    // Returns size of map to solve.
+    /**
+     * @brief Returns the current size of the map.
+     * @param[out] width  Receives the number of columns.
+     * @param[out] height Receives the number of rows.
+     */
     void GetSize(int &width, int
                  &height)   // I think it would be better using std:pair as a return type.
     {
@@ -34,26 +66,42 @@ public:
         height = m_height;
     }
 
-    // Sets border at given point.
+    /**
+     * @brief Marks the cell at (x, y) as a border.
+     * @param x Column index (0-based).
+     * @param y Row index (0-based).
+     */
     void SetBorder(const int x, const int y)
     {
         m_mapArray[y * m_width + x] = true;
     }
 
-    // Clears border at given point.
+    /**
+     * @brief Removes the border mark from the cell at (x, y).
+     * @param x Column index (0-based).
+     * @param y Row index (0-based).
+     */
     void ClearBorder(const int x, const int y)
     {
         m_mapArray[y * m_width + x] = false;
     }
 
-    // Checks if there is a border at given point.
+    /**
+     * @brief Checks whether the cell at (x, y) is a border.
+     * @param x Column index (0-based).
+     * @param y Row index (0-based).
+     * @return @c true if the cell is a border, @c false otherwise.
+     */
     bool IsBorder(const int x, const int y)
     {
         return m_mapArray[y * m_width + x];
     }
 
-    // Show map contents.
-    // If we change return type to std::ostream, we can use it for writing file or any other stream object.
+    /**
+     * @brief Prints the map to standard output.
+     *
+     * Border cells are rendered as @c '#' and empty cells as @c '.'.
+     */
     void Show()   //Also this need to be const member function.
     {
         for (int row = 0; row < m_height; row++)
@@ -74,16 +122,34 @@ public:
     }
 
 private:
-    int m_width = 0;
-    int m_height = 0;
-    std::unique_ptr<bool[]> m_mapArray;
+    int m_width = 0;   ///< Number of columns in the map.
+    int m_height = 0;  ///< Number of rows in the map.
+    std::unique_ptr<bool[]> m_mapArray; ///< Flat array storing cell states (row-major).
 };
 
+/**
+ * @brief Concrete implementation of ZoneCounterInterface using a flood-fill algorithm.
+ *
+ * ZoneCounter copies the map state from a MapInterface instance and uses a
+ * recursive flood-fill to label each contiguous empty region with a unique
+ * character, counting the total number of such regions.
+ *
+ * @warning The recursive flood-fill may cause a stack overflow on very large maps.
+ *          This must be taken into account in safety-critical (e.g. DO-178) projects.
+ */
 class ZoneCounter : public ZoneCounterInterface
 {
 public:
 
-    // Feeds map instance into solution class, and initialize.
+    /**
+     * @brief Initialises the zone counter with the given map.
+     *
+     * Reads the map dimensions and cell states and prepares internal storage
+     * for the flood-fill algorithm. Resets any previously computed result.
+     *
+     * @param map Pointer to a MapInterface instance to analyse. Must not be
+     *            @c nullptr.
+     */
     void Init(MapInterface *map)
     {
         map->GetSize(m_width, m_height);
@@ -107,8 +173,15 @@ public:
         }
     };
 
-
-    // Counts zones in provided map, and return result.
+    /**
+     * @brief Counts the number of contiguous empty zones in the map.
+     *
+     * On the first call the flood-fill algorithm is executed and the zone
+     * count is stored. Subsequent calls return the cached result without
+     * recomputing.
+     *
+     * @return The total number of distinct contiguous empty zones found.
+     */
     int Solve()   //This function have two reposibilty. Both Solving problem and returning result. Returning result should be a different function. To provent doublde solving (!) I have to add isSolved control.
     {
         if (isSolved)
@@ -132,7 +205,12 @@ public:
         return zoneNumber;
     };
 
-    // If we change return type to std::ostream, we can use it for writing file or any other stream object.
+    /**
+     * @brief Prints the labelled zone map to standard output.
+     *
+     * Border cells are shown as @c '#' and each empty zone is shown with a
+     * unique character (starting from @c '1').
+     */
     void Show() const
     {
         for (int row = 0; row < m_height; row++)
@@ -146,8 +224,17 @@ public:
     }
 
 private:
-    // Recursive algorithm perfectly fits for this problem BUT it have a risk of stack overflow
-    // That why its must be bounded in DO-178 projects.
+    /**
+     * @brief Recursively fills a contiguous empty region starting at (x, y).
+     *
+     * Visits all four cardinal neighbours and marks each empty cell with
+     * @p sign. The recursion terminates when it reaches a border cell or the
+     * map boundary.
+     *
+     * @param x    Column index of the starting cell.
+     * @param y    Row index of the starting cell.
+     * @param sign Character label to assign to cells in this zone.
+     */
     void fillZone(int x, int y, char sign)
     {
         bool isvalidPoint = (x < m_width && x >= 0 && y < m_height && y >= 0);
@@ -161,6 +248,12 @@ private:
         }
     }
 
+    /**
+     * @brief Sets the character at cell (x, y) to @p sign.
+     * @param x    Column index (0-based).
+     * @param y    Row index (0-based).
+     * @param sign Character to store in the cell.
+     */
     void setPoint(int x, int y, char sign)
     {
         bool isvalidPoint = (x < m_width && x >= 0 && y < m_height
@@ -171,25 +264,41 @@ private:
         }
     }
 
+    /**
+     * @brief Returns the character stored at cell (x, y).
+     * @param x Column index (0-based).
+     * @param y Row index (0-based).
+     * @return The character stored at the specified cell.
+     */
     char getPoint(int x, int y) const
     {
         return m_charArray[y * m_width + x];
     }
 
+    /**
+     * @brief Checks whether the cell at (x, y) has not yet been assigned to a zone.
+     * @param x Column index (0-based).
+     * @param y Row index (0-based).
+     * @return @c true if the cell is empty (space character), @c false otherwise.
+     */
     bool isPointEmpty(int x, int y)
     {
         return (m_charArray[y * m_width + x] == ' ');
     }
 
-    int m_width = 0;
-    int m_height = 0;
+    int m_width = 0;   ///< Number of columns in the map.
+    int m_height = 0;  ///< Number of rows in the map.
     std::unique_ptr<char[]>
     m_charArray; //I think  2^8 - 1 different char is enough for filling map. (Actually 4 is already enough acording to four color map theorem)
-    int zoneNumber = 0;
-    bool isSolved = false;
+    int zoneNumber = 0;  ///< Number of zones found so far.
+    bool isSolved = false; ///< Whether Solve() has already been executed.
 
 };
 
+/**
+ * @brief Factory function that creates and returns a new ZoneCounter instance.
+ * @return A heap-allocated ZoneCounterInterface pointer to a ZoneCounter.
+ */
 ZoneCounterInterface *getZoneCounter()
 {
     //TODO ??? I have no idea what's the purpose of this.
